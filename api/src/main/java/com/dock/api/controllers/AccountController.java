@@ -3,6 +3,7 @@ package com.dock.api.controllers;
 import com.dock.api.dto.AccountDto;
 import com.dock.api.models.*;
 import com.dock.api.services.AccountServiceImpl;
+import com.dock.api.services.PersonServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import javax.validation.Valid;
 public class AccountController {
 
     final private AccountServiceImpl accountService;
+    final private PersonServiceImpl personService;
 
     @RequestMapping(value = "/account", method = RequestMethod.POST)
     public ResponseEntity<Object> saveAccount(@RequestBody @Valid AccountDto accountDto) {
