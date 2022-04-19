@@ -53,4 +53,19 @@ public class AccountController {
         accountModel.setIsActive(false);
         return ResponseEntity.status(HttpStatus.OK).body(accountService.save(accountModel));
     }
+
+    @RequestMapping(value = "/account/{accountId}/balance", method = RequestMethod.GET)
+    public ResponseEntity<Object> getAccountBalance(@PathVariable long accountId) {
+        if (accountId < 1) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Bad Request: Invalid account id");
+        }
+
+        Optional<AccountModel> optionalAccountModel = accountService.findById(accountId);
+        if (!optionalAccountModel.isPresent()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Bad Request: Account does not exist");
+        }
+
+        AccountBalanceModel accountBalanceModel = new AccountBalanceModel(optionalAccountModel.get().getBalance());
+        return ResponseEntity.status(HttpStatus.OK).body(accountBalanceModel);
+    }
 }
