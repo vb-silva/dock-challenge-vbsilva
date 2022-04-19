@@ -23,7 +23,7 @@ public class AccountController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Conflict: Person already has an account");
         }
 
-        if (!personService.existsByPersonId(personId)) {
+        if (!personService.existsById(personId)) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Conflict: Person does not exist");
         }
 
