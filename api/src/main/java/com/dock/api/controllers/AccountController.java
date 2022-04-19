@@ -1,6 +1,8 @@
 package com.dock.api.controllers;
 
+import com.dock.api.dto.AccountDto;
 import com.dock.api.models.*;
+import com.dock.api.services.AccountServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +13,8 @@ import javax.validation.Valid;
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class AccountController {
+
+    final private AccountServiceImpl accountService;
 
     @RequestMapping(value = "/account", method = RequestMethod.POST)
     public ResponseEntity<Object> saveAccount(@RequestBody @Valid AccountDto accountDto) {
