@@ -8,6 +8,7 @@ import com.dock.api.services.PersonServiceImpl;
 import com.dock.api.services.TransactionService;
 import com.dock.api.services.TransactionServiceImpl;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -111,5 +112,17 @@ public class AccountController {
         BigDecimal newBalance = accountModel.getBalance().add(transactionModel.getAmount());
         accountModel.setBalance(newBalance);
         return ResponseEntity.status(HttpStatus.OK).body(accountService.save(accountModel));
+    }
+
+    @RequestMapping(value = "/account/{accountId}/extract", method = RequestMethod.GET)
+    public ResponseEntity<Page<TransactionModel>> getAccountExtract(
+            TransactionPage transactionPage,
+            TransactionSearchCriteria transactionSearchCriteria,
+            @PathVariable long accountId) {
+        return ResponseEntity.status(HttpStatus.OK).body(transactionService.getAccountExtractWithFilter(
+                accountId,
+                transactionPage,
+                transactionSearchCriteria
+        ));
     }
 }
