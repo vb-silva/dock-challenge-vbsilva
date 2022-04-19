@@ -13,4 +13,6 @@ public interface AccountService {
 
     public boolean existsByPersonId(long personId);
 
+    public Optional<AccountModel> findById(long accountId);
+
 }

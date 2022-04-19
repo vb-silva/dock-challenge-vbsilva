@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @RestController
@@ -31,5 +32,25 @@ public class AccountController {
 
         AccountModel accountModel = accountService.createAccountModel(accountDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(accountService.save(accountModel));
+    }
+
+    @RequestMapping(value = "/account/{accountId}/deactivate", method = RequestMethod.PUT)
+    public ResponseEntity<Object> deactivateAccount(@PathVariable long accountId) {
+        if (accountId < 1) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Bad Request: Invalid account id");
+        }
+
+        Optional<AccountModel> optionalAccountModel = accountService.findById(accountId);
+        if (!optionalAccountModel.isPresent()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Bad Request: Account does not exist");
+        }
+
+        AccountModel accountModel = optionalAccountModel.get();
+        if (!accountModel.getIsActive()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Bad Request: Account is inactive");
+        }
+
+        accountModel.setIsActive(false);
+        return ResponseEntity.status(HttpStatus.OK).body(accountService.save(accountModel));
     }
 }

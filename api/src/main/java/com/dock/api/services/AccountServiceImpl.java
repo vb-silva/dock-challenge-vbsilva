@@ -35,6 +35,11 @@ public class AccountServiceImpl implements AccountService{
     }
 
     @Override
+    public Optional<AccountModel> findById(long accountId) {
+        return accountRepository.findById(accountId);
+    }
+
+    @Override
     public AccountModel createAccountModel(AccountDto accountDto) {
         AccountTypeModel accountType = AccountTypeModel.valueOf(accountDto.getAccountType());
         BigDecimal dailyWithdrawalLimit = getDailyWithdrawalLimit(accountType);
