@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
@@ -18,6 +19,7 @@ import java.util.Optional;
 public class AccountServiceImpl implements AccountService{
 
     private final AccountRepository accountRepository;
+    private final Clock clock;
 
     private static final BigDecimal CURRENT_ACCOUNT_LIMIT = BigDecimal.valueOf(1000.0);
     private static final BigDecimal SAVINGS_ACCOUNT_LIMIT = BigDecimal.valueOf(500.0);
@@ -44,7 +46,7 @@ public class AccountServiceImpl implements AccountService{
         AccountTypeModel accountType = AccountTypeModel.valueOf(accountDto.getAccountType());
         BigDecimal dailyWithdrawalLimit = getDailyWithdrawalLimit(accountType);
 
-        LocalDateTime creationUTC = LocalDateTime.now(ZoneId.of("UTC"));
+        LocalDateTime creationUTC = LocalDateTime.now(clock);
 
         AccountModel accountModel = new AccountModel();
         accountModel.setDailyWithdrawalLimit(dailyWithdrawalLimit);
