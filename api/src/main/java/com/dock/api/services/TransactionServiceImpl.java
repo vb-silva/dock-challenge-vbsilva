@@ -8,11 +8,13 @@ import com.dock.api.models.TransactionTypeModel;
 import com.dock.api.repositories.TransactionCriteriaRepository;
 import com.dock.api.repositories.TransactionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
@@ -24,12 +26,14 @@ public class TransactionServiceImpl implements  TransactionService {
 
     private final TransactionCriteriaRepository transactionCriteriaRepository;
 
+    private final Clock clock;
+
     @Override
     public TransactionModel createTransactionModel(TransactionDto transactionDto, long accountId) {
         long amountE2 = transactionDto.getAmount();
         TransactionTypeModel transactionType = TransactionTypeModel.valueOf(transactionDto.getTransactionType());
         BigDecimal amount = transactionType == TransactionTypeModel.DEPOSIT ? BigDecimal.valueOf(amountE2/100.0) : BigDecimal.valueOf(amountE2 * -1/100.0);
-        LocalDateTime transactionTimeUTC = LocalDateTime.now(ZoneId.of("UTC"));
+        LocalDateTime transactionTimeUTC = LocalDateTime.now(clock);
 
         TransactionModel transactionModel = new TransactionModel();
         transactionModel.setAccountId(accountId);
