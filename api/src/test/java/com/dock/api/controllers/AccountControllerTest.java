@@ -95,22 +95,20 @@ class AccountControllerTest {
     @Test
     void deactivateAccountShouldRunSuccessfully() {
         var activeAccountId = 1L;
-        AccountModel activeAccount = new AccountModel();
-        activeAccount.setIsActive(true);
+        AccountModel account = new AccountModel();
+        account.setIsActive(true);
 
-        AccountModel inactiveAccount = new AccountModel();
-        inactiveAccount.setIsActive(false);
 
-        var expectedResponse = ResponseEntity.status(HttpStatus.OK).body(inactiveAccount);
+        var expectedResponse = ResponseEntity.status(HttpStatus.OK).body(account);
 
-        when(accountService.findById(activeAccountId)).thenReturn(Optional.of(activeAccount));
-        when(accountService.save(inactiveAccount)).thenReturn(inactiveAccount);
+        when(accountService.findById(activeAccountId)).thenReturn(Optional.of(account));
+        when(accountService.save(account)).thenReturn(account);
 
         var response = accountController.deactivateAccount(activeAccountId);
         assertThat(response).usingRecursiveComparison().isEqualTo(expectedResponse);
 
         verify(accountService, times(1)).findById(activeAccountId);
-        verify(accountService, times(1)).save(inactiveAccount);
+        verify(accountService, times(1)).save(account);
     }
 
     @Test
@@ -180,16 +178,125 @@ class AccountControllerTest {
         transactionModel.setAmount(BigDecimal.valueOf(10.00));
         var account = new AccountModel();
         account.setIsActive(true);
+        account.setBalance(transactionModel.getAmount());
 
         when(accountService.findById(validAccountId)).thenReturn(Optional.of(account));
-        doNothing().when(transactionService).createTransactionModel(depositTransaction, validAccountId);
-        account.setBalance(transactionModel.getAmount());
+        when(transactionService.createTransactionModel(depositTransaction, validAccountId)).thenReturn(transactionModel);
+        when(transactionService.save(transactionModel)).thenReturn(transactionModel);
+        when(accountService.save(account)).thenReturn(account);
+
         var expectedResponse = ResponseEntity.status(HttpStatus.OK).body(account);
         var response = accountController.transact(validAccountId, depositTransaction);
+
+        assertThat(response).usingRecursiveComparison().isEqualTo(expectedResponse);
+
+        verify(accountService, times(1)).findById(validAccountId);
+        verify(accountService, times(1)).save(account);
+        verify(transactionService, times(1)).createTransactionModel(depositTransaction, validAccountId);
+        verify(transactionService, times(1)).save(transactionModel);
+
     }
 
     @Test
-    void getAccountExtract() {
+    void transactShouldWithdrawSuccessfully() {
+        var validAccountId = 1L;
+        var withdrawTransaction = new TransactionDto(1000, "WITHDRAW");
+        var transactionModel = new TransactionModel();
+        transactionModel.setTransactionTimeUTC(LOCAL_DATE_TIME);
+        transactionModel.setAccountId(validAccountId);
+        transactionModel.setAmount(BigDecimal.valueOf(-10.00));
+        var account = new AccountModel();
+        account.setIsActive(true);
+        account.setBalance(BigDecimal.valueOf(100000.0));
+        account.setAccountType("current");
+        account.setDailyWithdrawalLimit(BigDecimal.valueOf(1000.0));
+
+        when(accountService.findById(validAccountId)).thenReturn(Optional.of(account));
+        when(transactionService.createTransactionModel(withdrawTransaction, validAccountId)).thenReturn(transactionModel);
+        when(transactionService.save(transactionModel)).thenReturn(transactionModel);
+        when(accountService.save(account)).thenReturn(account);
+
+        var expectedResponse = ResponseEntity.status(HttpStatus.OK).body(account);
+        var response = accountController.transact(validAccountId, withdrawTransaction);
+
+        assertThat(response).usingRecursiveComparison().isEqualTo(expectedResponse);
+
+        verify(accountService, times(1)).findById(validAccountId);
+        verify(accountService, times(1)).save(account);
+        verify(transactionService, times(1)).createTransactionModel(withdrawTransaction, validAccountId);
+        verify(transactionService, times(1)).save(transactionModel);
+    }
+
+    @Test
+    void transactWithdrawShouldFailByAccountBalance() {
+        var validAccountId = 1L;
+        var withdrawTransaction = new TransactionDto(1000, "WITHDRAW");
+        var account = new AccountModel();
+        account.setIsActive(true);
+        account.setBalance(BigDecimal.valueOf(1));
+        account.setAccountType("current");
+        account.setDailyWithdrawalLimit(BigDecimal.valueOf(1000.0));
+
+        when(accountService.findById(validAccountId)).thenReturn(Optional.of(account));
+
+        var expectedResponse = ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Bad Request: Amount is greater than account balance");
+        var response = accountController.transact(validAccountId, withdrawTransaction);
+
+        assertThat(response).usingRecursiveComparison().isEqualTo(expectedResponse);
+
+        verify(accountService, times(1)).findById(validAccountId);
+    }
+
+    @Test
+    void transactWithdrawShouldFailByWithdrawLimit() {
+        var validAccountId = 1L;
+        var withdrawTransaction = new TransactionDto(10100, "WITHDRAW");
+        var account = new AccountModel();
+        account.setIsActive(true);
+        account.setBalance(BigDecimal.valueOf(100000000.0));
+        account.setAccountType("salary");
+        account.setDailyWithdrawalLimit(BigDecimal.valueOf(100.0));
+
+        when(accountService.findById(validAccountId)).thenReturn(Optional.of(account));
+
+        var expectedResponse = ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Bad Request: Amount is greater than account withdrawal limit");
+        var response = accountController.transact(validAccountId, withdrawTransaction);
+
+        assertThat(response).usingRecursiveComparison().isEqualTo(expectedResponse);
+
+        verify(accountService, times(1)).findById(validAccountId);
+    }
+
+    @Test
+    void transactShouldFailByInactiveAcount() {
+        var validAccountId = 1L;
+        var withdrawTransaction = new TransactionDto(10100, "WITHDRAW");
+        var account = new AccountModel();
+        account.setIsActive(false);
+
+        when(accountService.findById(validAccountId)).thenReturn(Optional.of(account));
+
+        var expectedResponse = ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Bad Request: Account is inactive");
+        var response = accountController.transact(validAccountId, withdrawTransaction);
+
+        assertThat(response).usingRecursiveComparison().isEqualTo(expectedResponse);
+
+        verify(accountService, times(1)).findById(validAccountId);
+    }
+
+    @Test
+    void transactShouldFailByNonExistenteAcount() {
+        var invalidAccountId = 1L;
+        var withdrawTransaction = new TransactionDto(10100, "WITHDRAW");
+
+        when(accountService.findById(invalidAccountId)).thenReturn(Optional.empty());
+
+        var expectedResponse = ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Bad Request: Account does not exist");
+        var response = accountController.transact(invalidAccountId, withdrawTransaction);
+
+        assertThat(response).usingRecursiveComparison().isEqualTo(expectedResponse);
+
+        verify(accountService, times(1)).findById(invalidAccountId);
     }
 
 }
