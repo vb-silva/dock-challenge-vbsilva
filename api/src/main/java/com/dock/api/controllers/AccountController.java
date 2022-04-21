@@ -80,7 +80,7 @@ public class AccountController {
 
     @Transactional
     @RequestMapping(value = "/account/{accountId}/transaction", method = RequestMethod.PUT)
-    public ResponseEntity<Object> depositAmount(
+    public ResponseEntity<Object> transact(
             @PathVariable long accountId,
             @RequestBody @Valid TransactionDto transactionDto
     ) {
